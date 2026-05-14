@@ -51,14 +51,17 @@ func main() {
 		port = "3001"
 	}
 
-	// Dependency Injection - Matrix
-	matrixService := services.NewMatrixService()
-	matrixController := controllers.NewMatrixController(matrixService)
-
-	// Dependency Injection - Auth (Repository -> Service -> Controller)
+	// Dependency Injection - Repositories
 	userRepo := repositories.NewUserRepository(database.DB)
+	matrixRepo := repositories.NewMatrixRepository(database.DB)
+
+	// Dependency Injection - Services
 	authService := services.NewAuthService(userRepo)
+	matrixService := services.NewMatrixService(matrixRepo)
+
+	// Dependency Injection - Controllers
 	authController := controllers.NewAuthController(authService)
+	matrixController := controllers.NewMatrixController(matrixService)
 
 	// Routes
 	routes.SetupMatrixRoutes(app, matrixController)

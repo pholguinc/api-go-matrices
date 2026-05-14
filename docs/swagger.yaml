@@ -146,10 +146,9 @@ paths:
     post:
       consumes:
       - application/json
-      description: Calcula las matrices Q (ortogonal) y R (triangular superior) de
-        una matriz dada.
+      description: Calcula las matrices Q y R para una matriz dada y guarda el historial.
       parameters:
-      - description: Matriz original
+      - description: Matriz a factorizar
         in: body
         name: matrix
         required: true
@@ -177,7 +176,7 @@ paths:
             $ref: '#/definitions/github_com_pholguinc_api-go-matrices_internal_dtos.ApiResponse'
       security:
       - BearerAuth: []
-      summary: Realiza la factorización QR
+      summary: Factorización QR de una matriz
       tags:
       - matrix
 securityDefinitions:

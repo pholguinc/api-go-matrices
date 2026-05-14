@@ -120,7 +120,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Calcula las matrices Q (ortogonal) y R (triangular superior) de una matriz dada.",
+                "description": "Calcula las matrices Q y R para una matriz dada y guarda el historial.",
                 "consumes": [
                     "application/json"
                 ],
@@ -130,10 +130,10 @@ const docTemplate = `{
                 "tags": [
                     "matrix"
                 ],
-                "summary": "Realiza la factorización QR",
+                "summary": "Factorización QR de una matriz",
                 "parameters": [
                     {
-                        "description": "Matriz original",
+                        "description": "Matriz a factorizar",
                         "name": "matrix",
                         "in": "body",
                         "required": true,

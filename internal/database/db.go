@@ -32,6 +32,6 @@ func ConnectDB() {
 	log.Println("Connected to database successfully")
 
 	log.Println("Running auto-migrations...")
-	//DB.Migrator().DropTable(&models.User{})
-	DB.AutoMigrate(&models.User{})
+	DB.Migrator().DropTable(&models.User{}, &models.MatrixRecord{})
+	DB.AutoMigrate(&models.User{}, &models.MatrixRecord{})
 }

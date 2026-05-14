@@ -31,9 +31,7 @@ func ConnectDB() {
 
 	log.Println("Connected to database successfully")
 
-	// Automigración de modelos
 	log.Println("Running auto-migrations...")
-	// Descomenta la línea de abajo si necesitas recrear la tabla por cambios de tipo
-	DB.Migrator().DropTable(&models.User{})
+	//DB.Migrator().DropTable(&models.User{})
 	DB.AutoMigrate(&models.User{})
 }

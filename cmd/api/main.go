@@ -5,8 +5,12 @@ import (
 	"os"
 
 	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/middleware/cors"
+	"github.com/joho/godotenv"
 	"github.com/pholguinc/api-go-matrices/internal/controllers"
+	"github.com/pholguinc/api-go-matrices/internal/database"
 	"github.com/pholguinc/api-go-matrices/internal/middlewares"
+	"github.com/pholguinc/api-go-matrices/internal/repositories"
 	"github.com/pholguinc/api-go-matrices/internal/routes"
 	"github.com/pholguinc/api-go-matrices/internal/services"
 )
@@ -16,8 +20,27 @@ import (
 // @description API para realizar factorización QR de matrices rectangulares.
 // @host localhost:3001
 // @BasePath /
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Escribe 'Bearer ' seguido de tu token JWT.
 func main() {
+	// Load environment variables
+	if err := godotenv.Load(); err != nil {
+		log.Println("No .env file found, using system environment variables")
+	}
+
+	// Connect to Database
+	database.ConnectDB()
+
 	app := fiber.New()
+
+	// CORS Middleware
+	app.Use(cors.New(cors.Config{
+		AllowOrigins: []string{"*"},
+		AllowHeaders: []string{"Origin", "Content-Type", "Accept", "Authorization"},
+		AllowMethods: []string{"GET", "POST", "PUT", "DELETE"},
+	}))
 
 	// Middlewares
 	app.Use(middlewares.Logger)
@@ -28,12 +51,18 @@ func main() {
 		port = "3001"
 	}
 
-	// Dependency Injection
-	service := services.NewMatrixService()
-	controller := controllers.NewMatrixController(service)
+	// Dependency Injection - Matrix
+	matrixService := services.NewMatrixService()
+	matrixController := controllers.NewMatrixController(matrixService)
+
+	// Dependency Injection - Auth (Repository -> Service -> Controller)
+	userRepo := repositories.NewUserRepository(database.DB)
+	authService := services.NewAuthService(userRepo)
+	authController := controllers.NewAuthController(authService)
 
 	// Routes
-	routes.SetupMatrixRoutes(app, controller)
+	routes.SetupMatrixRoutes(app, matrixController)
+	routes.SetupAuthRoutes(app, authController)
 
 	log.Printf("Server starting on port %s", port)
 	log.Fatal(app.Listen(":" + port))

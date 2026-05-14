@@ -25,6 +25,7 @@ func NewMatrixController(service services.MatrixService) *MatrixController {
 // @Success 200 {object} dtos.ApiResponse{data=dtos.QRResponseData}
 // @Failure 400 {object} dtos.ApiResponse
 // @Failure 500 {object} dtos.ApiResponse
+// @Security BearerAuth
 // @Router /matrix/factorize [post]
 func (ctrl *MatrixController) Factorize(c fiber.Ctx) error {
 	var req dtos.QRRequest

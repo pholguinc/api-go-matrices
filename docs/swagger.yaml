@@ -1,6 +1,6 @@
 basePath: /
 definitions:
-  dtos.ApiResponse:
+  github_com_pholguinc_api-go-matrices_internal_dtos.ApiResponse:
     properties:
       data:
         description: Data returned by the operation
@@ -15,7 +15,23 @@ definitions:
           @example 200
         type: integer
     type: object
-  dtos.QRRequest:
+  github_com_pholguinc_api-go-matrices_internal_dtos.AuthResponse:
+    properties:
+      token:
+        type: string
+      user: {}
+    type: object
+  github_com_pholguinc_api-go-matrices_internal_dtos.LoginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  github_com_pholguinc_api-go-matrices_internal_dtos.QRRequest:
     properties:
       matrix:
         description: |-
@@ -30,7 +46,7 @@ definitions:
     required:
     - matrix
     type: object
-  dtos.QRResponseData:
+  github_com_pholguinc_api-go-matrices_internal_dtos.QRResponseData:
     properties:
       q:
         items:
@@ -47,6 +63,17 @@ definitions:
           type: array
         type: array
     type: object
+  github_com_pholguinc_api-go-matrices_internal_dtos.RegisterRequest:
+    properties:
+      email:
+        type: string
+      password:
+        minLength: 6
+        type: string
+    required:
+    - email
+    - password
+    type: object
 host: localhost:3001
 info:
   contact: {}
@@ -54,6 +81,67 @@ info:
   title: Matrix Factorization API
   version: "1.0"
 paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Autentica a un usuario y devuelve un token JWT válido por 24h.
+      parameters:
+      - description: Credenciales de acceso
+        in: body
+        name: credentials
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_pholguinc_api-go-matrices_internal_dtos.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Login exitoso con token JWT
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_pholguinc_api-go-matrices_internal_dtos.ApiResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_pholguinc_api-go-matrices_internal_dtos.AuthResponse'
+              type: object
+        "401":
+          description: Credenciales inválidas
+          schema:
+            $ref: '#/definitions/github_com_pholguinc_api-go-matrices_internal_dtos.ApiResponse'
+      summary: Inicio de sesión
+      tags:
+      - auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Crea un nuevo usuario en el sistema con contraseña encriptada.
+      parameters:
+      - description: Datos de registro
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_pholguinc_api-go-matrices_internal_dtos.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Usuario creado exitosamente
+          schema:
+            $ref: '#/definitions/github_com_pholguinc_api-go-matrices_internal_dtos.ApiResponse'
+        "400":
+          description: Datos de entrada inválidos
+          schema:
+            $ref: '#/definitions/github_com_pholguinc_api-go-matrices_internal_dtos.ApiResponse'
+        "500":
+          description: Error interno del servidor o email duplicado
+          schema:
+            $ref: '#/definitions/github_com_pholguinc_api-go-matrices_internal_dtos.ApiResponse'
+      summary: Registro de nuevo usuario
+      tags:
+      - auth
   /matrix/factorize:
     post:
       consumes:
@@ -66,7 +154,7 @@ paths:
         name: matrix
         required: true
         schema:
-          $ref: '#/definitions/dtos.QRRequest'
+          $ref: '#/definitions/github_com_pholguinc_api-go-matrices_internal_dtos.QRRequest'
       produces:
       - application/json
       responses:
@@ -74,20 +162,28 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/dtos.ApiResponse'
+            - $ref: '#/definitions/github_com_pholguinc_api-go-matrices_internal_dtos.ApiResponse'
             - properties:
                 data:
-                  $ref: '#/definitions/dtos.QRResponseData'
+                  $ref: '#/definitions/github_com_pholguinc_api-go-matrices_internal_dtos.QRResponseData'
               type: object
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/dtos.ApiResponse'
+            $ref: '#/definitions/github_com_pholguinc_api-go-matrices_internal_dtos.ApiResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/dtos.ApiResponse'
+            $ref: '#/definitions/github_com_pholguinc_api-go-matrices_internal_dtos.ApiResponse'
+      security:
+      - BearerAuth: []
       summary: Realiza la factorización QR
       tags:
       - matrix
+securityDefinitions:
+  BearerAuth:
+    description: Escribe 'Bearer ' seguido de tu token JWT.
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"

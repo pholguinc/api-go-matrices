@@ -21,6 +21,12 @@ El proyecto utiliza un archivo `.env` para la configuración. Puedes basarte en 
 
 ## Ejecución
 
+### Infraestructura (Base de Datos)
+Para levantar la base de datos PostgreSQL usando Docker:
+```bash
+docker compose up -d
+```
+
 ### 1. Instalar dependencias
 ```bash
 go mod tidy
@@ -90,7 +96,7 @@ Realiza la descomposición de una matriz $A$ en una matriz ortogonal $Q$ y una m
 │   └── api/            # Punto de entrada de la aplicación
 ├── internal/
 │   ├── controllers/    # Manejadores de peticiones HTTP
-│   ├── services/       # Lógica de negocio (Algoritmo QR)
+│   ├── services/       # Lógica de negocio
 │   ├── routes/         # Definición de rutas
 │   ├── dtos/           # Objetos de transferencia de datos
 │   ├── constants/      # Constantes y mensajes de error

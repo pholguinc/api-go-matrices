@@ -15,8 +15,111 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/auth/login": {
+            "post": {
+                "description": "Autentica a un usuario y devuelve un token JWT válido por 24h.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Inicio de sesión",
+                "parameters": [
+                    {
+                        "description": "Credenciales de acceso",
+                        "name": "credentials",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_pholguinc_api-go-matrices_internal_dtos.LoginRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Login exitoso con token JWT",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_pholguinc_api-go-matrices_internal_dtos.ApiResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_pholguinc_api-go-matrices_internal_dtos.AuthResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "Credenciales inválidas",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_pholguinc_api-go-matrices_internal_dtos.ApiResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/register": {
+            "post": {
+                "description": "Crea un nuevo usuario en el sistema con contraseña encriptada.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Registro de nuevo usuario",
+                "parameters": [
+                    {
+                        "description": "Datos de registro",
+                        "name": "user",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_pholguinc_api-go-matrices_internal_dtos.RegisterRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Usuario creado exitosamente",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_pholguinc_api-go-matrices_internal_dtos.ApiResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Datos de entrada inválidos",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_pholguinc_api-go-matrices_internal_dtos.ApiResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Error interno del servidor o email duplicado",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_pholguinc_api-go-matrices_internal_dtos.ApiResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/matrix/factorize": {
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Calcula las matrices Q (ortogonal) y R (triangular superior) de una matriz dada.",
                 "consumes": [
                     "application/json"
@@ -35,7 +138,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dtos.QRRequest"
+                            "$ref": "#/definitions/github_com_pholguinc_api-go-matrices_internal_dtos.QRRequest"
                         }
                     }
                 ],
@@ -45,13 +148,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/dtos.ApiResponse"
+                                    "$ref": "#/definitions/github_com_pholguinc_api-go-matrices_internal_dtos.ApiResponse"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/dtos.QRResponseData"
+                                            "$ref": "#/definitions/github_com_pholguinc_api-go-matrices_internal_dtos.QRResponseData"
                                         }
                                     }
                                 }
@@ -61,13 +164,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/dtos.ApiResponse"
+                            "$ref": "#/definitions/github_com_pholguinc_api-go-matrices_internal_dtos.ApiResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/dtos.ApiResponse"
+                            "$ref": "#/definitions/github_com_pholguinc_api-go-matrices_internal_dtos.ApiResponse"
                         }
                     }
                 }
@@ -75,7 +178,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "dtos.ApiResponse": {
+        "github_com_pholguinc_api-go-matrices_internal_dtos.ApiResponse": {
             "type": "object",
             "properties": {
                 "data": {
@@ -91,7 +194,31 @@ const docTemplate = `{
                 }
             }
         },
-        "dtos.QRRequest": {
+        "github_com_pholguinc_api-go-matrices_internal_dtos.AuthResponse": {
+            "type": "object",
+            "properties": {
+                "token": {
+                    "type": "string"
+                },
+                "user": {}
+            }
+        },
+        "github_com_pholguinc_api-go-matrices_internal_dtos.LoginRequest": {
+            "type": "object",
+            "required": [
+                "email",
+                "password"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_pholguinc_api-go-matrices_internal_dtos.QRRequest": {
             "type": "object",
             "required": [
                 "matrix"
@@ -110,7 +237,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dtos.QRResponseData": {
+        "github_com_pholguinc_api-go-matrices_internal_dtos.QRResponseData": {
             "type": "object",
             "properties": {
                 "q": {
@@ -134,6 +261,30 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "github_com_pholguinc_api-go-matrices_internal_dtos.RegisterRequest": {
+            "type": "object",
+            "required": [
+                "email",
+                "password"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string",
+                    "minLength": 6
+                }
+            }
+        }
+    },
+    "securityDefinitions": {
+        "BearerAuth": {
+            "description": "Escribe 'Bearer ' seguido de tu token JWT.",
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
         }
     }
 }`

@@ -29,7 +29,7 @@ Esto levantará la API en el puerto `3001` y una base de datos PostgreSQL lista 
 | Variable | Descripción | Producción (AWS) |
 | :--- | :--- | :--- |
 | `PORT` | Puerto del servidor | `3001` |
-| `DB_HOST` | Host de la base de datos | RDS Endpoint / Supabase |
+| `DB_HOST` | Host de la base de datos | RDS Endpoint|
 | `DB_PORT` | Puerto de Postgres | `5432` |
 | `DB_USER` | Usuario de Postgres | `user_admin` |
 | `DB_NAME` | Nombre de la base de datos | `matrices_db` |

@@ -13,25 +13,34 @@ import (
 var DB *gorm.DB
 
 func ConnectDB() {
+	host := os.Getenv("DB_HOST")
+	user := os.Getenv("DB_USER")
+	password := os.Getenv("DB_PASSWORD")
+	dbname := os.Getenv("DB_NAME")
+	port := os.Getenv("DB_PORT")
+	sslmode := os.Getenv("DB_SSLMODE")
+
+	if sslmode == "" {
+		sslmode = "disable"
+	}
+
 	dsn := fmt.Sprintf(
-		"host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
-		os.Getenv("DB_HOST"),
-		os.Getenv("DB_USER"),
-		os.Getenv("DB_PASSWORD"),
-		os.Getenv("DB_NAME"),
-		os.Getenv("DB_PORT"),
+		"host=%s user=%s password=%s dbname=%s port=%s sslmode=%s",
+		host, user, password, dbname, port, sslmode,
 	)
 
 	var err error
 	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
 
 	if err != nil {
-		log.Fatal("Failed to connect to database: ", err)
+		log.Printf("Error connecting to database: %v", err)
+		if os.Getenv("AWS_LAMBDA_FUNCTION_NAME") == "" {
+			log.Fatal("Failed to connect to database: ", err)
+		}
+		return
 	}
 
 	log.Println("Connected to database successfully")
 
-	log.Println("Running auto-migrations...")
-	DB.Migrator().DropTable(&models.User{}, &models.MatrixRecord{})
 	DB.AutoMigrate(&models.User{}, &models.MatrixRecord{})
 }

@@ -1,0 +1,27 @@
+service: api-go-matrices
+
+provider:
+  name: aws
+  runtime: provided.al2 # Amazon Linux 2 para Go
+  architecture: arm64   # Más eficiente para Go
+  region: us-east-1
+  environment:
+    DB_HOST: ${env:DB_HOST}
+    DB_PORT: ${env:DB_PORT}
+    DB_USER: ${env:DB_USER}
+    DB_PASSWORD: ${env:DB_PASSWORD}
+    DB_NAME: ${env:DB_NAME}
+    DB_SSLMODE: ${env:DB_SSLMODE, 'require'}
+    JWT_SECRET: ${env:JWT_SECRET}
+
+functions:
+  api:
+    handler: bootstrap # Nombre del binario compilado
+    events:
+      - httpApi: '*'
+
+package:
+  individually: true
+  patterns:
+    - '!./**'
+    - ./bootstrap # Solo incluimos el binario

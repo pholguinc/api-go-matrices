@@ -1,9 +1,13 @@
 package main
 
 import (
+	"context"
 	"log"
 	"os"
 
+	"github.com/aws/aws-lambda-go/events"
+	"github.com/aws/aws-lambda-go/lambda"
+	fiberadapter "github.com/awslabs/aws-lambda-go-api-proxy/fiber"
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/cors"
 	"github.com/joho/godotenv"
@@ -15,6 +19,8 @@ import (
 	"github.com/pholguinc/api-go-matrices/internal/services"
 )
 
+var fiberLambda *fiberadapter.FiberLambdaV3
+
 // @title Matrix Factorization API
 // @version 1.0
 // @description API para realizar factorización QR de matrices rectangulares.
@@ -25,41 +31,30 @@ import (
 // @name Authorization
 // @description Escribe 'Bearer ' seguido de tu token JWT.
 func main() {
-	// Load environment variables
-	if err := godotenv.Load(); err != nil {
-		log.Println("No .env file found, using system environment variables")
+	// 1. Load environment variables (solo local)
+	if os.Getenv("AWS_LAMBDA_FUNCTION_NAME") == "" {
+		_ = godotenv.Load()
 	}
 
-	// Connect to Database
+	// 2. Connect to Database
 	database.ConnectDB()
 
+	// 3. Setup App
 	app := fiber.New()
 
-	// CORS Middleware
+	// Middlewares
 	app.Use(cors.New(cors.Config{
 		AllowOrigins: []string{"*"},
 		AllowHeaders: []string{"Origin", "Content-Type", "Accept", "Authorization"},
 		AllowMethods: []string{"GET", "POST", "PUT", "DELETE"},
 	}))
-
-	// Middlewares
 	app.Use(middlewares.Logger)
 
-	// Environments
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "3001"
-	}
-
-	// Dependency Injection - Repositories
+	// Dependency Injection
 	userRepo := repositories.NewUserRepository(database.DB)
 	matrixRepo := repositories.NewMatrixRepository(database.DB)
-
-	// Dependency Injection - Services
 	authService := services.NewAuthService(userRepo)
 	matrixService := services.NewMatrixService(matrixRepo)
-
-	// Dependency Injection - Controllers
 	authController := controllers.NewAuthController(authService)
 	matrixController := controllers.NewMatrixController(matrixService)
 
@@ -67,6 +62,23 @@ func main() {
 	routes.SetupMatrixRoutes(app, matrixController)
 	routes.SetupAuthRoutes(app, authController)
 
-	log.Printf("Server starting on port %s", port)
-	log.Fatal(app.Listen(":" + port))
+	// 4. Execution Mode
+	if os.Getenv("AWS_LAMBDA_FUNCTION_NAME") != "" {
+		// Lambda Mode
+		fiberLambda = fiberadapter.NewV3(app)
+		lambda.Start(Handler)
+	} else {
+		// Local Mode
+		port := os.Getenv("PORT")
+		if port == "" {
+			port = "3001"
+		}
+		log.Printf("Server starting locally on port %s", port)
+		log.Fatal(app.Listen(":" + port))
+	}
+}
+
+// Handler for AWS Lambda
+func Handler(ctx context.Context, req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+	return fiberLambda.ProxyWithContext(ctx, req)
 }

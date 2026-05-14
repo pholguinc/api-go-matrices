@@ -20,7 +20,7 @@ func NewMatrixService(repo repositories.MatrixRepository) MatrixService {
 }
 
 func (s *matrixService) FactorizeQR(userID string, matrix [][]float64) (dtos.QRResponseData, error) {
-	q, r := computeQR(matrix)
+	q, r := ComputeQR(matrix)
 	
 	result := dtos.QRResponseData{
 		Q: q,
@@ -39,7 +39,7 @@ func (s *matrixService) FactorizeQR(userID string, matrix [][]float64) (dtos.QRR
 	return result, nil
 }
 
-func computeQR(a [][]float64) ([][]float64, [][]float64) {
+func ComputeQR(a [][]float64) ([][]float64, [][]float64) {
 	m := len(a)
 	if m == 0 {
 		return nil, nil

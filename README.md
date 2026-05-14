@@ -1,138 +1,80 @@
 # Matrix Factorization API (Go)
 
-API profesional desarrollada en **Go** utilizando el framework **Fiber v3** para realizar la factorización QR de matrices rectangulares. Incluye un sistema de autenticación robusto basado en JWT.
+API profesional desarrollada en **Go** utilizando el framework **Fiber v3** para realizar la factorización QR de matrices rectangulares. Este proyecto está diseñado para ser **Cloud-Ready**, soportando despliegues en contenedores (Docker/ECS) y arquitecturas Serverless (AWS Lambda).
 
 ## Tecnologías
-- [Go](https://go.dev/) (v1.26+)
+- [Go](https://go.dev/) (v1.24+)
 - [Fiber v3](https://docs.gofiber.io/v3/)
 - [GORM](https://gorm.io/) & [PostgreSQL](https://www.postgresql.org/)
 - [JWT](https://jwt.io/) & [Bcrypt](https://en.wikipedia.org/wiki/Bcrypt)
-- [Swaggo](https://github.com/swaggo/swag) & [Scalar](https://scalar.com/)
+- [Docker](https://www.docker.com/) (Multi-stage)
+- [Serverless Framework](https://www.serverless.com/) (AWS Lambda)
 
 ---
 
-## Configuración (Variables de Entorno)
-El proyecto utiliza un archivo `.env` para la configuración.
+## Ejecución Local (Docker Compose)
 
-| Variable | Descripción | Por defecto |
+La forma más rápida de iniciar todo el ecosistema (API + DB) es usando Docker Compose:
+
+```bash
+docker compose up --build
+```
+
+Esto levantará la API en el puerto `3001` y una base de datos PostgreSQL lista para usar. El contenedor de la API está configurado en modo **development**, lo que facilita la depuración.
+
+---
+
+## Configuración (Variables de Env)
+
+| Variable | Descripción | Producción (AWS) |
 | :--- | :--- | :--- |
 | `PORT` | Puerto del servidor | `3001` |
-| `DB_HOST` | Host de la base de datos | `localhost` |
+| `DB_HOST` | Host de la base de datos | RDS Endpoint / Supabase |
 | `DB_PORT` | Puerto de Postgres | `5432` |
-| `DB_USER` | Usuario de Postgres | `postgres` |
-| `DB_PASSWORD`| Contraseña de Postgres | `postgres` |
+| `DB_USER` | Usuario de Postgres | `user_admin` |
 | `DB_NAME` | Nombre de la base de datos | `matrices_db` |
-| `JWT_SECRET` | Clave secreta para firmar tokens | `tu_secreto` |
+| `DB_SSLMODE` | Modo SSL de conexión | `require` |
+| `JWT_SECRET` | Clave para firmar tokens | Secreto largo y complejo |
 
 ---
 
-## Ejecución
+## Despliegue en Producción
 
-### Infraestructura (Base de Datos)
-Para levantar la base de datos PostgreSQL usando Docker:
+### 1. AWS Lambda (Serverless)
+El proyecto incluye un adaptador para correr como una función Lambda detrás de un API Gateway.
+
+**Compilar para AWS (ARM64):**
 ```bash
-docker compose up -d
+GOOS=linux GOARCH=arm64 go build -o bootstrap cmd/api/main.go
 ```
 
-### Instalar dependencias
+**Desplegar:**
 ```bash
-go mod tidy
+serverless deploy
 ```
 
-### Generar documentación (Swagger)
+### 2. Docker (Producción)
+Para generar una imagen optimizada para producción (mínimo peso, máxima seguridad):
+
 ```bash
-swag init -g cmd/api/main.go --parseInternal --parseDependency
-```
-
-### Iniciar el servidor
-```bash
-go run cmd/api/main.go
-```
-
----
-
-## Endpoints de Autenticación
-
-### Registro de Usuario
-**POST** `/auth/register`
-
-**Payload (JSON):**
-```json
-{
-  "email": "usuario@ejemplo.com",
-  "password": "mi_password_seguro_123"
-}
-```
-
-### Inicio de Sesión
-**POST** `/auth/login`
-
-**Payload de Entrada (JSON):**
-```json
-{
-  "email": "usuario@ejemplo.com",
-  "password": "mi_password_seguro_123"
-}
-```
-
-**Respuesta Exitosa (JSON):**
-```json
-{
-  "status": 200,
-  "message": "Login exitoso",
-  "data": {
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "user": {
-      "id": "a48dff30-5510-45f1-86bd-cab52e0846c6",
-      "email": "usuario@ejemplo.com",
-      "created_at": "2024-05-13T21:21:28.11Z"
-    }
-  }
-}
+docker build --target production -t matrix-api-go:prod .
 ```
 
 ---
 
-## Endpoints Protegidos
+## Endpoints
 
-### Factorización QR
-**POST** `/matrix/factorize`
-- **Requisito**: Header `Authorization: Bearer <TOKEN_JWT>`
+### Autenticación
+- **POST** `/auth/register`: Registro de usuarios (UUID).
+- **POST** `/auth/login`: Obtención de Token JWT.
 
-**Payload de Entrada (JSON):**
-```json
-{
-  "matrix": [
-    [12, -51, 4],
-    [6, 167, -68],
-    [-4, 24, -41]
-  ]
-}
-```
-
-**Respuesta Exitosa (JSON):**
-```json
-{
-  "status": 200,
-  "message": "Factorización QR completada",
-  "data": {
-    "q": [
-      [0.85714, -0.39428, 0.33142],
-      [0.42857, 0.90285, -0.03428],
-      [-0.28571, 0.17142, 0.94285]
-    ],
-    "r": [
-      [14, 21, -14],
-      [0, 175, -70],
-      [0, 0, -35]
-    ]
-  }
-}
-```
+### Operaciones (Protegidas)
+- **POST** `/matrix/factorize`: Calcula QR y guarda el historial en DB.
+- **GET** `/matrix/history`: Recupera cálculos previos del usuario.
 
 ---
 
-## Documentación
+## Documentación Interactiva
 Accede a la consola de Scalar para probar todos los endpoints y la autenticación:
 **[http://localhost:3001/docs](http://localhost:3001/docs)**
 
@@ -141,16 +83,15 @@ Accede a la consola de Scalar para probar todos los endpoints y la autenticació
 ## Estructura del Proyecto
 ```text
 .
-├── cmd/api/            # Punto de entrada
+├── cmd/api/            # Punto de entrada (Local & Lambda)
 ├── internal/
 │   ├── controllers/    # Manejadores HTTP
-│   ├── services/       # Lógica de negocio (Algoritmo QR / Auth)
-│   ├── repositories/   # Acceso a base de datos (GORM)
-│   ├── models/         # Entidades de base de datos (User)
-│   ├── routes/         # Definición de rutas y grupos
-│   ├── dtos/           # Objetos de transferencia
-│   └── middlewares/    # Auth JWT y Logger
-├── docs/               # Documentación Swagger/Scalar
-├── docker-compose.yml  # Infraestructura Postgres
+│   ├── services/       # Lógica (Algoritmo QR / Auth / Persistencia)
+│   ├── repositories/   # Acceso a DB (GORM)
+│   ├── models/         # Entidades (User, MatrixRecord)
+│   └── middlewares/    # Auth JWT, Logger y Adaptadores
+├── Dockerfile          # Multi-stage (Dev & Prod)
+├── docker-compose.yml  # Orquestación Local
+├── serverless.yml      # Configuración AWS Lambda
 └── README.md           # Este archivo
 ```

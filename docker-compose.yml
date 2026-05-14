@@ -1,4 +1,25 @@
 services:
+  api:
+    build:
+      context: .
+      target: development # Usar etapa de desarrollo para local
+    container_name: matrices_go_api
+    ports:
+      - "${PORT:-3001}:3001"
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=${DB_USER:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-postgres}
+      - DB_NAME=${DB_NAME:-matrices_db}
+      - DB_SSLMODE=disable
+      - JWT_SECRET=${JWT_SECRET:-tu_secreto_super_seguro}
+    volumes:
+      - .:/app
+    depends_on:
+      db:
+        condition: service_healthy
+
   db:
     image: postgres:15-alpine
     container_name: matrices_db
@@ -11,6 +32,11 @@ services:
       - "${DB_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-matrices_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
 volumes:
   postgres_data:

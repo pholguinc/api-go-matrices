@@ -1,21 +1,28 @@
 # Matrix Factorization API (Go)
 
-API profesional desarrollada en **Go** utilizando el framework **Fiber v3** para realizar la factorización QR de matrices rectangulares.
+API profesional desarrollada en **Go** utilizando el framework **Fiber v3** para realizar la factorización QR de matrices rectangulares. Incluye un sistema de autenticación robusto basado en JWT.
 
 ## Tecnologías
 - [Go](https://go.dev/) (v1.26+)
 - [Fiber v3](https://docs.gofiber.io/v3/)
-- [Swaggo](https://github.com/swaggo/swag)
-- [Scalar](https://scalar.com/)
+- [GORM](https://gorm.io/) & [PostgreSQL](https://www.postgresql.org/)
+- [JWT](https://jwt.io/) & [Bcrypt](https://en.wikipedia.org/wiki/Bcrypt)
+- [Swaggo](https://github.com/swaggo/swag) & [Scalar](https://scalar.com/)
 
 ---
 
 ## Configuración (Variables de Entorno)
-El proyecto utiliza un archivo `.env` para la configuración. Puedes basarte en `.env.template`.
+El proyecto utiliza un archivo `.env` para la configuración.
 
 | Variable | Descripción | Por defecto |
 | :--- | :--- | :--- |
-| `PORT` | Puerto en el que correrá el servidor | `3001` |
+| `PORT` | Puerto del servidor | `3001` |
+| `DB_HOST` | Host de la base de datos | `localhost` |
+| `DB_PORT` | Puerto de Postgres | `5432` |
+| `DB_USER` | Usuario de Postgres | `postgres` |
+| `DB_PASSWORD`| Contraseña de Postgres | `postgres` |
+| `DB_NAME` | Nombre de la base de datos | `matrices_db` |
+| `JWT_SECRET` | Clave secreta para firmar tokens | `tu_secreto` |
 
 ---
 
@@ -27,61 +34,97 @@ Para levantar la base de datos PostgreSQL usando Docker:
 docker compose up -d
 ```
 
-### 1. Instalar dependencias
+### Instalar dependencias
 ```bash
 go mod tidy
 ```
 
-### 2. Generar documentación (Swagger)
-Si realizas cambios en las anotaciones de la API, ejecuta:
+### Generar documentación (Swagger)
 ```bash
-swag init -g cmd/api/main.go
+swag init -g cmd/api/main.go --parseInternal --parseDependency
 ```
 
-### 3. Iniciar el servidor
+### Iniciar el servidor
 ```bash
 go run cmd/api/main.go
 ```
 
 ---
 
-## Documentación de la API
-Una vez iniciado el servidor, puedes acceder a la documentación interactiva en:
-**[http://localhost:3001/docs](http://localhost:3001/docs)**
+## Endpoints de Autenticación
+
+### Registro de Usuario
+**POST** `/auth/register`
+
+**Payload (JSON):**
+```json
+{
+  "email": "usuario@ejemplo.com",
+  "password": "mi_password_seguro_123"
+}
+```
+
+### Inicio de Sesión
+**POST** `/auth/login`
+
+**Payload de Entrada (JSON):**
+```json
+{
+  "email": "usuario@ejemplo.com",
+  "password": "mi_password_seguro_123"
+}
+```
+
+**Respuesta Exitosa (JSON):**
+```json
+{
+  "status": 200,
+  "message": "Login exitoso",
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "user": {
+      "id": "a48dff30-5510-45f1-86bd-cab52e0846c6",
+      "email": "usuario@ejemplo.com",
+      "created_at": "2024-05-13T21:21:28.11Z"
+    }
+  }
+}
+```
 
 ---
 
-## Endpoints
+## Endpoints Protegidos
 
 ### Factorización QR
-Realiza la descomposición de una matriz $A$ en una matriz ortogonal $Q$ y una matriz triangular superior $R$.
+**POST** `/matrix/factorize`
+- **Requisito**: Header `Authorization: Bearer <TOKEN_JWT>`
 
-**URL:** `/matrix/factorize`  
-**Método:** `POST`
-
-#### Ejemplo de Payload (Request):
+**Payload de Entrada (JSON):**
 ```json
 {
   "matrix": [
-    [12, -51],
-    [6, 167]
+    [12, -51, 4],
+    [6, 167, -68],
+    [-4, 24, -41]
   ]
 }
 ```
 
-#### Ejemplo de Respuesta (Success):
+**Respuesta Exitosa (JSON):**
 ```json
 {
   "status": 200,
   "message": "Factorización QR completada",
   "data": {
     "q": [
-      [0.8944271909999159, -0.4472135954999579],
-      [0.4472135954999579, 0.8944271909999159]
+      [0.85714, -0.39428, 0.33142],
+      [0.42857, 0.90285, -0.03428],
+      [-0.28571, 0.17142, 0.94285]
     ],
     "r": [
-      [13.416407864998739, 29.06915570749726],
-      [0, 172.1772342674838]
+      [14, 21, -14],
+      [0, 175, -70],
+      [0, 0, -35]
     ]
   }
 }
@@ -89,19 +132,25 @@ Realiza la descomposición de una matriz $A$ en una matriz ortogonal $Q$ y una m
 
 ---
 
+## Documentación
+Accede a la consola de Scalar para probar todos los endpoints y la autenticación:
+**[http://localhost:3001/docs](http://localhost:3001/docs)**
+
+---
+
 ## Estructura del Proyecto
 ```text
 .
-├── cmd/
-│   └── api/            # Punto de entrada de la aplicación
+├── cmd/api/            # Punto de entrada
 ├── internal/
-│   ├── controllers/    # Manejadores de peticiones HTTP
-│   ├── services/       # Lógica de negocio
-│   ├── routes/         # Definición de rutas
-│   ├── dtos/           # Objetos de transferencia de datos
-│   ├── constants/      # Constantes y mensajes de error
-│   └── middlewares/    # Middlewares (Logger, etc.)
-├── docs/               # Documentación generada y archivos estáticos
-├── .env                # Configuración local
-└── go.mod              # Dependencias del proyecto
+│   ├── controllers/    # Manejadores HTTP
+│   ├── services/       # Lógica de negocio (Algoritmo QR / Auth)
+│   ├── repositories/   # Acceso a base de datos (GORM)
+│   ├── models/         # Entidades de base de datos (User)
+│   ├── routes/         # Definición de rutas y grupos
+│   ├── dtos/           # Objetos de transferencia
+│   └── middlewares/    # Auth JWT y Logger
+├── docs/               # Documentación Swagger/Scalar
+├── docker-compose.yml  # Infraestructura Postgres
+└── README.md           # Este archivo
 ```

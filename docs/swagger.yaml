@@ -1,0 +1,93 @@
+basePath: /
+definitions:
+  dtos.ApiResponse:
+    properties:
+      data:
+        description: Data returned by the operation
+      message:
+        description: |-
+          Message describing the result
+          @example "Operación exitosa"
+        type: string
+      status:
+        description: |-
+          Status code of the response
+          @example 200
+        type: integer
+    type: object
+  dtos.QRRequest:
+    properties:
+      matrix:
+        description: |-
+          Matrix is a 2D array of numbers
+          @example [[12, -51], [6, 167]]
+        items:
+          items:
+            format: float64
+            type: number
+          type: array
+        type: array
+    required:
+    - matrix
+    type: object
+  dtos.QRResponseData:
+    properties:
+      q:
+        items:
+          items:
+            format: float64
+            type: number
+          type: array
+        type: array
+      r:
+        items:
+          items:
+            format: float64
+            type: number
+          type: array
+        type: array
+    type: object
+host: localhost:3001
+info:
+  contact: {}
+  description: API para realizar factorización QR de matrices rectangulares.
+  title: Matrix Factorization API
+  version: "1.0"
+paths:
+  /matrix/factorize:
+    post:
+      consumes:
+      - application/json
+      description: Calcula las matrices Q (ortogonal) y R (triangular superior) de
+        una matriz dada.
+      parameters:
+      - description: Matriz original
+        in: body
+        name: matrix
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.QRRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dtos.ApiResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dtos.QRResponseData'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ApiResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ApiResponse'
+      summary: Realiza la factorización QR
+      tags:
+      - matrix
+swagger: "2.0"

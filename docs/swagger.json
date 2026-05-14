@@ -1,0 +1,133 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "API para realizar factorización QR de matrices rectangulares.",
+        "title": "Matrix Factorization API",
+        "contact": {},
+        "version": "1.0"
+    },
+    "host": "localhost:3001",
+    "basePath": "/",
+    "paths": {
+        "/matrix/factorize": {
+            "post": {
+                "description": "Calcula las matrices Q (ortogonal) y R (triangular superior) de una matriz dada.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "matrix"
+                ],
+                "summary": "Realiza la factorización QR",
+                "parameters": [
+                    {
+                        "description": "Matriz original",
+                        "name": "matrix",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dtos.QRRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/dtos.ApiResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dtos.QRResponseData"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ApiResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dtos.ApiResponse"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "dtos.ApiResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "description": "Data returned by the operation"
+                },
+                "message": {
+                    "description": "Message describing the result\n@example \"Operación exitosa\"",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "Status code of the response\n@example 200",
+                    "type": "integer"
+                }
+            }
+        },
+        "dtos.QRRequest": {
+            "type": "object",
+            "required": [
+                "matrix"
+            ],
+            "properties": {
+                "matrix": {
+                    "description": "Matrix is a 2D array of numbers\n@example [[12, -51], [6, 167]]",
+                    "type": "array",
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "type": "number",
+                            "format": "float64"
+                        }
+                    }
+                }
+            }
+        },
+        "dtos.QRResponseData": {
+            "type": "object",
+            "properties": {
+                "q": {
+                    "type": "array",
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "type": "number",
+                            "format": "float64"
+                        }
+                    }
+                },
+                "r": {
+                    "type": "array",
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "type": "number",
+                            "format": "float64"
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
